@@ -1,9 +1,10 @@
-""" filename: script.py """
+#""" filename: script.py """
 
 import parameters
 from time import sleep
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
+from parsel import Selector
 
 driver = webdriver.Chrome('/Users/username/bin/chromedriver')
 driver.get('https://www.linkedin.com')
@@ -32,14 +33,75 @@ sleep(3)
 
 linkedin_urls = driver.find_elements_by_css_selector('.r a')
 linkedin_urls = [url.get_attribute('href') for url in linkedin_urls]
-this will extract the urls (user link + translate page link )
+#this will extract the urls (user link + translate page link )
 sleep(0.5)
 
-driver.quit()
+linkedin_urls = [url.text for url in linkedin_urls]
+sleep(0.5)
 
 
+# For loop to iterate over each URL in the list
+for linkedin_url in linkedin_urls:
 
-""" filename: parameters.py """
+   # get the profile URL
+   driver.get(linkedin_url)
+
+   # add a 5 second pause loading each URL
+   sleep(5)
+
+   # assigning the source code for the webpage to variable sel
+   sel = Selector(text=driver.page_source)
+
+# xpath to extract the text from the class containing the name
+name = sel.xpath('//*[starts-with(@class, "pv-top-card-section__name")]/text()').extract_first()
+if name:
+    name = name.strip()
+
+# xpath to extract the text from the class containing the job title
+job_title = sel.xpath('//*[starts-with(@class, "pv-top-card-section__headline")]/text()').extract_first()
+if job_title:
+    job_title = job_title.strip()
+
+
+# xpath to extract the text from the class containing the company
+company = sel.xpath('//*[starts-with(@class, "pv-top-card-v2-section__entity-name pv-top-card-v2-section__company-name")]/text()').extract_first()
+if company:
+    company = company.strip()
+
+
+# xpath to extract the text from the class containing the college
+college = sel.xpath('//*[starts-with(@class, "pv-top-card-v2-section__entity-name pv-top-card-v2-section__school-name")]/text()').extract_first()
+if college:
+    college = college.strip()
+
+
+# xpath to extract the text from the class containing the location
+location = sel.xpath('//*[starts-with(@class, "pv-top-card-section__location")]/text()').extract_first()
+if location:
+    location = location.strip()
+
+linkedin_url = driver.current_url
+
+# printing the output to the terminal
+print('\n')
+print('Name: ' + name)
+print('Job Title: ' + job_title)
+print('Company: ' + company)
+print('College: ' + college)
+print('Location: ' + location)
+print('URL: ' + linkedin_url)
+print('\n')
+
+# defining new variable passing two parameters
+writer = csv.writer(open(parameters.file_name, 'wb'))
+
+# writerow() method to the write to the file object
+writer.writerow(['Name','Job Title','Company','College', 'Location','URL'])
+
+# writing the corresponding values to the header
+writer.writerow([name.encode('utf-8'), job_title.encode('utf-8'), company.encode('utf-8'), college.encode('utf-8'), location.encode('utf-8'), linkedin_url.encode('utf-8')])
+
+#""" filename: parameters.py """
 
 search_query = 'site:linkedin.com/in/ AND "python developer" AND "London"'
 file_name = 'results_file.csv'
